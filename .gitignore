@@ -106,3 +106,6 @@ venv.bak/
 .vscode
 playground/
 .DS_Store
+dev-requirements.txt
+Dockerfile
+di.yml
