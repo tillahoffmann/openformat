@@ -40,7 +40,8 @@ def _load_struct(match, buffer, byte_order):
     dtype = CTYPES_FORMAT_LOOKUP.get(dtype, dtype)
     fmt = f"{byte_order}{num or ''}{dtype}"
     size = struct.calcsize(fmt)
-    return struct.unpack(fmt, buffer.read(size))[0]
+    values = struct.unpack(fmt, buffer.read(size))
+    return values if len(values) > 1 else values[0]
 
 
 PATTERNS = [
