@@ -5,5 +5,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'numpy>=1.3'
-    ]
+    ],
+    version="0.1",
+    author="Till Hoffmann",
 )

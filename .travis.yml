@@ -1,9 +1,14 @@
 language: python
 python:
-  - "3.6"
+- '3.6'
 cache: pip
 install:
-  - pip install -r requirements.txt
-  - pip install -e .
+- pip install -r requirements.txt
+- pip install -e .
 script:
-  - make tests
+- make tests
+deploy:
+  provider: pypi
+  user: tillahoffmann
+  password:
+    secure: otEX0r37OsPahOA07W5f3ChyAzv7H+e1e/9AV7KRydnd1bJgY4ZvxlRctudBlleusCWk3DEt+zE32lRVHbVnKUe1ri42Q13vZAF4edvY9gYniaYm6a4o2vStl/OaL1zAYLuqiX6xF8uoWC22vpyNkbV+EkN+SLv3hBX+qRBzdvL81Vc89nQUAv161bZ7bGXaImFZtJoWSeX5qgvyLGUVvuYjAUV38D7b8US2EQKjilDyNjJssuPFedasOVvoKB3YJlUfwOmKCSckW4pafv2qop82k0oiZu9y3QhZHJE6bEtRAn/JVaNkCkiQzdgnBgZf5J+tWKiJUZSiGv/n+AZejRr4rBfV9uUlqfUPlQjwZP3pOtr2NULMy+lMsL1xCtG/deCyTYxA5WsIA2rllza/00SRxrI7bNUndaOEYtcexUZR1kalpPbRq/tIJvI6eJvDNb1E74EQ+AFdIlICGzfAt3Uz+8iydQRmG7BnA6RMScaEfDv1+4Yp8AzmXIUtPYk8V/FQebH02qbgfze3kOVfyCi9Xdb9iHuZWs9yJjDYTqh5JPHq8PlJJgQe52TuLd6eV+TIGI8X9qUBwtJ+jGeR3lTx0n3MHfqHuruHxh4creV6IeX2A+VlcDrTrtL2w419jlkhXLiudOx33/WpHe0l0MAvIa4bZdP23KPfDGJaei0=
