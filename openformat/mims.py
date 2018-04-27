@@ -41,18 +41,18 @@ def load_mims(filename, byte_order=None):
         mims['def_analysis'] = Def_analysis.from_buffer(fp, byte_order)
         try:
             analysis_type = ANALYSIS_TYPES[mims.def_analysis.analysis_type]
-        except KeyError:
+        except KeyError:  # pragma: no cover
             raise ValueError(f"found unrecognised analysis type {analysis_type} (expected "
                              "one of {list(ANALYSIS_TYPES)})")
 
         if analysis_type == 'IMAGE':
             mims['mask_im'] = Mask_im.from_buffer(fp, byte_order)
-            mims['masses'] = [Tab_mass.from_buffer(fp, byte_order) for _ in range(mims.mask_im.nb_mass)]
-            mims['cal_conds'] = [Cal_cond.from_buffer(fp, byte_order) for _ in range(mims.mask_im.nb_mass)]
+            mims['tab_mass'] = [Tab_mass.from_buffer(fp, byte_order) for _ in range(mims.mask_im.nb_mass)]
+            mims['cal_cond'] = [Cal_cond.from_buffer(fp, byte_order) for _ in range(mims.mask_im.nb_mass)]
             mims['poly_list'] = Poly_list.from_buffer(fp, byte_order)
-            mims['polyatomic'] = [Polyatomique.from_buffer(fp, byte_order) for _ in range(mims.poly_list.nb_poly)]
+            mims['polyatomique'] = [Polyatomique.from_buffer(fp, byte_order) for _ in range(mims.poly_list.nb_poly)]
             mims['mask_nano'] = Mask_nano.from_buffer(fp, byte_order)
-            mims['Bfields'] = [Tab_BField_nano.from_buffer(fp, byte_order) for _ in range(mims.mask_nano.m_nNbBField)]
+            mims['tab_Bfield_nano'] = [Tab_BField_nano.from_buffer(fp, byte_order) for _ in range(mims.mask_nano.m_nNbBField)]
 
             # Consume 288 dummy bytes (no idea where they come from)
             _ = fp.read(288)
@@ -587,7 +587,7 @@ class HvCont(Structure):
     ]
 
 
-class Champs_list(Structure):
+class Champs_list(Structure):  # pragma: no cover
     """It contains Autocalibration field list information."""
     __size__ = 24
     __fields__ = [
@@ -601,7 +601,7 @@ class Champs_list(Structure):
         assert self.structname.startswith(self.__class__.__name__)
 
 
-class Offset_list(Structure):
+class Offset_list(Structure):  # pragma: no cover
     """It contains Hv control offset list information."""
     __size__ = 14
     __fields__ = [
