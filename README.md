@@ -4,4 +4,5 @@ Scientific equipment often produces output in binary formats that make it diffic
 
 ## Supported formats
 
+* Perkin Elmer spectra
 * Multi-isotope imaging mass spectrometry (MIMS)
