@@ -11,7 +11,7 @@ setup(
     install_requires=[
         'numpy>=1.3'
     ],
-    version="0.1.2",
+    version="0.1.3",
     author="Till Hoffmann",
     long_description=long_description,
     long_description_content_type="text/markdown",
