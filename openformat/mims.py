@@ -2,6 +2,8 @@ import logging
 import os
 import struct
 
+import numpy as np
+
 from .util import Structure, from_buffer
 
 
@@ -19,7 +21,7 @@ ANALYSIS_TYPES = {
 }
 
 
-def load_mims(filename, byte_order=None):
+def load_mims(filename, byte_order=None, roll_data=True):
     """
     Load a multi-isotope imaging mass spectrometry (MIMS) file.
 
@@ -27,6 +29,11 @@ def load_mims(filename, byte_order=None):
     ----------
     filename : str
         path to the MIMS file
+    byte_order : str
+        byte order of the encoded binary data
+    roll_data : bool
+        whether to roll image data along the last two dimenions. Rolling the image fixes an issue
+        with Cameca's encoding of pixel positions.
 
     Returns
     -------
@@ -74,6 +81,8 @@ def load_mims(filename, byte_order=None):
                 f'{mims.header_image.w}, {mims.header_image.h}]'
 
             mims['data'] = from_buffer(fmt, fp, byte_order)
+            if roll_data:
+                mims['data'] = np.roll(mims['data'], 1, axis=(2, 3))
         else:
             raise NotImplementedError(f"{analysis_type} is not implemented")
 
