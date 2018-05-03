@@ -109,3 +109,5 @@ playground/
 dev-requirements.txt
 Dockerfile
 di.yml
+
+.Trash-*/

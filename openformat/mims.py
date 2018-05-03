@@ -3,6 +3,7 @@ import os
 import struct
 
 import numpy as np
+from scipy import ndimage
 
 from .util import Structure, from_buffer
 
@@ -83,7 +84,7 @@ def load_mims(filename, byte_order=None, roll_data=True):
             mims['data'] = from_buffer(fmt, fp, byte_order)
             if roll_data:
                 mims['data'] = np.roll(mims['data'], 1, axis=(2, 3))
-        else:
+        else:  # pragma: no cover
             raise NotImplementedError(f"{analysis_type} is not implemented")
 
         assert fp.tell() == stat.st_size, f"consumed {fp.tell()} bytes (expected {stat.st_size})"
@@ -951,3 +952,122 @@ class Anal_param_nano_bis(Structure):
     def validate(self):
         super(Anal_param_nano_bis, self).validate()
         assert self.pszNomStruct.startswith(self.__class__.__name__)
+
+
+def remove_correlated_noise(data, kernel_size=3, outlier_factor=3, min_count=1, num_outliers=5):
+    """
+    Remove correlated noise from nanoSIMS data.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        data tensor with shape `(n, p, w, h)`, where `n` is the number of frames,
+        `p` is the number of detectors, `w` is the width, and `h` is the height
+    kernel_size : int
+        size of the kernel used for median filtering
+    outlier_factor : float
+        factor multiplying the median-filtered image to define the threshold that
+        serves to flag a pixel as an outlier
+    min_count : float
+        minimum count used to determine the threshold if the median-filtered image
+        is smaller
+    num_outliers : int
+        number of times a pixel needs to be labelled as an outlier in different
+        detectors to be considered correlated noise
+
+    Returns
+    -------
+    cleaned : np.ndarray
+        cleaned data tensor with the same shape as `data` with hot pixels replaced
+        by median-filtered pixels
+    """
+    data = np.asarray(data)
+    assert data.ndim == 4, f"expected `data` to have 4 dimensions; got {data.ndim}"
+    assert 1 <= num_outliers <= data.shape[1], "number of ouliers must be positive " \
+        "and <= the number of detectors"
+
+    filtered = ndimage.median_filter(data, (1, 1, kernel_size, kernel_size))
+    masks = data > outlier_factor * np.maximum(filtered, min_count)
+    mask = np.sum(masks, axis=1) >= num_outliers
+    # Repeat the mask along the detector dimension so we can index
+    mask = np.repeat(mask[:, None], data.shape[1], 1)
+    cleaned = data.copy()
+    cleaned[mask] = filtered[mask]
+    return cleaned
+
+
+def infer_translations(data, padding=8, method='sequential'):
+    """
+    Infer translations between successive frames to increase sharpness of aggregated
+    nanoSIMS images.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        data tensor for a single detector with shape `(n, w, h)`, where `n` is the
+        number of frames, `w` is the width, and `h` is the height
+    padding : int
+        padding applied to the data tensor before computing correlations
+    method : str
+        method used to align different frames. 'sequential' aggregates frames in
+        order and aligns successive frames with the current best aggregate.
+
+    Returns
+    -------
+    translations : np.ndarray
+        sequence of translations that should be applied to align the images
+    """
+    assert data.ndim == 3, f"expected `data` to have 3 dimensions; got {data.ndim}"
+    data = np.pad(data, [(0, 0), (padding, padding), (padding, padding)], 'constant')
+
+    if method == 'sequential':
+        translations = [(0, 0)]
+        aggregate = data[0]
+        for frame in data[1:]:
+            transformed = np.fft.fft2(frame[::-1, ::-1])
+            convolution = np.fft.fftshift(np.fft.ifft2(np.fft.fft2(aggregate) * transformed))
+            dx, dy = np.unravel_index(np.argmax(convolution), convolution.shape)
+            dx -= convolution.shape[0] // 2 - 1
+            dy -= convolution.shape[1] // 2 - 1
+            translations.append((dx, dy))
+            aggregate += np.roll(frame, (dx, dy), (0, 1))
+    else:
+        raise NotImplementedError
+
+    # Center the translations
+    translations = np.asarray(translations)
+    translations -= np.median(translations, axis=0).astype(int)
+    return translations
+
+
+def apply_translations(data, translations, padding=8):
+    """
+    Apply the sequence of translations to the data.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        data tensor with shape `(n, p, w, h)`, where `n` is the number of frames,
+        `p` is the number of detectors, `w` is the width, and `h` is the height
+    translations : np.ndarray
+        sequence of translations that should be applied to align the images
+
+    Returns
+    -------
+    translated : np.ndarray
+        translated data tensor with shape `(n, p, w + 2 * padding, h + 2 * padding)`
+    """
+    data = np.asarray(data).copy()
+    translations = np.asarray(translations)
+    assert data.ndim == 4, f"expected `data` to have 4 dimensions; got {data.ndim}"
+    expected_shape = (data.shape[0], 2)
+    assert translations.shape == expected_shape, "expected `translations` to have shape " \
+        f"{expected_shape}; got {translations.shape}"
+
+    # Apply the translations by rolling the image
+    translated = []
+    for frame, translation in zip(data, translations):
+        frame = np.pad(frame, [(0, 0), (padding, padding), (padding, padding)], 'constant')
+        translated.append(np.roll(frame, translation, (1, 2)))
+
+    return np.asarray(translated)
