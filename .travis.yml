@@ -4,7 +4,7 @@ python:
 cache: pip
 install:
 - pip install --upgrade pip setuptools whell
-- pip install --only-binary=numpy,scipy -r requirements.txt
+- pip install --only-binary=scipy -r requirements.txt
 - pip install -e .
 script:
 - make tests
