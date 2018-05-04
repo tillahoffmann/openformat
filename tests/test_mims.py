@@ -13,7 +13,7 @@ def test_load_mims():
 def test_filter_align():
     padding = 8
     mims = load_mims(FILENAME)
-    cleaned = remove_correlated_noise(mims.data)
+    cleaned = remove_correlated_noise(mims.data, 5)
     translations = infer_translations(cleaned[:, 0], padding)
     aligned = apply_translations(cleaned, translations, padding)
     assert aligned.shape == cleaned.shape[:2] + (cleaned.shape[2] + 2 * padding,) * 2

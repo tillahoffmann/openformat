@@ -954,7 +954,7 @@ class Anal_param_nano_bis(Structure):
         assert self.pszNomStruct.startswith(self.__class__.__name__)
 
 
-def remove_correlated_noise(data, kernel_size=3, outlier_factor=3, min_count=1, num_outliers=5):
+def remove_correlated_noise(data, num_outliers, kernel_size=3, outlier_factor=3, min_count=1):
     """
     Remove correlated noise from nanoSIMS data.
 
@@ -963,6 +963,9 @@ def remove_correlated_noise(data, kernel_size=3, outlier_factor=3, min_count=1, 
     data : np.ndarray
         data tensor with shape `(n, p, w, h)`, where `n` is the number of frames,
         `p` is the number of detectors, `w` is the width, and `h` is the height
+    num_outliers : int
+        number of times a pixel needs to be labelled as an outlier in different
+        detectors to be considered correlated noise
     kernel_size : int
         size of the kernel used for median filtering
     outlier_factor : float
@@ -971,9 +974,6 @@ def remove_correlated_noise(data, kernel_size=3, outlier_factor=3, min_count=1, 
     min_count : float
         minimum count used to determine the threshold if the median-filtered image
         is smaller
-    num_outliers : int
-        number of times a pixel needs to be labelled as an outlier in different
-        detectors to be considered correlated noise
 
     Returns
     -------
