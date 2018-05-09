@@ -3,7 +3,8 @@ python:
 - '3.6'
 cache: pip
 install:
-- pip install -r requirements.txt
+- pip install --upgrade pip setuptools wheel
+- pip install --only-binary=scipy -r requirements.txt
 - pip install -e .
 script:
 - make tests

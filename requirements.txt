@@ -1,5 +1,6 @@
 pytest==3.5.1
 pytest-cov==2.5.1
 numpy==1.14.2
+scipy==1.0.1
 setuptools>=38.6.0
 twine>=1.11.0
