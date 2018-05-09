@@ -1,5 +1,6 @@
-from openformat.mims import load_mims, remove_correlated_noise, infer_translations, \
-    apply_translations
+import numpy as np
+from openformat.mims import load_mims, remove_hot_pixels, infer_translations, \
+    apply_translations, infer_hot_pixels, apply_mask
 
 FILENAME = 'tests/data/2018_04_25_Cd_AF33_1_ROI3.im'
 
@@ -13,7 +14,14 @@ def test_load_mims():
 def test_filter_align():
     padding = 8
     mims = load_mims(FILENAME)
-    cleaned = remove_correlated_noise(mims.data, 5)
+    cleaned = remove_hot_pixels(mims.data, 5)
     translations = infer_translations(cleaned[:, 0], padding)
     aligned = apply_translations(cleaned, translations, padding)
     assert aligned.shape == cleaned.shape[:2] + (cleaned.shape[2] + 2 * padding,) * 2
+
+def test_apply_mask():
+    mims = load_mims(FILENAME)
+    mask = infer_hot_pixels(mims.data, 5)
+    cleaned = apply_mask(mims.data, mask, -1)
+    for i in range(cleaned.shape[1]):
+        np.testing.assert_equal(cleaned[:, i] == -1, mask)

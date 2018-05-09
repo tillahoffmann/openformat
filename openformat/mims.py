@@ -954,9 +954,10 @@ class Anal_param_nano_bis(Structure):
         assert self.pszNomStruct.startswith(self.__class__.__name__)
 
 
-def remove_correlated_noise(data, num_outliers, kernel_size=3, outlier_factor=3, min_count=1):
+def infer_hot_pixels(data, num_outliers, kernel_size=3, outlier_factor=3, min_count=1,
+                     max_repeat_fraction=0.1, num_nonzero=None, return_filtered=False):
     """
-    Remove correlated noise from nanoSIMS data.
+    Identify hot pixels due to correlated noise.
 
     Parameters
     ----------
@@ -974,6 +975,96 @@ def remove_correlated_noise(data, num_outliers, kernel_size=3, outlier_factor=3,
     min_count : float
         minimum count used to determine the threshold if the median-filtered image
         is smaller
+    max_repeat_fraction : float
+        maximum fraction of frames in which a pixel is allowed to be a hot pixel.
+        If a pixel is a hot pixel candidate in more than `max_repeat_fraction` of
+        all frames, it is not considered a hot pixel.
+    num_nonzeros : int
+        number of detectors in which a hot pixel candidate must be non-zero. Default
+        is all detectors.
+    return_filtered : bool
+        whether to return the median-filtered image
+
+    Returns
+    -------
+    mask : np.ndarray
+        binary mask of hot pixels with shape `(n, w, h)`
+    """
+    data = np.asarray(data)
+    assert data.ndim == 4, f"expected `data` to have 4 dimensions; got {data.ndim}"
+    assert 1 <= num_outliers <= data.shape[1], "number of ouliers must be positive " \
+        "and <= the number of detectors"
+    num_nonzero = num_nonzero or data.shape[1]
+
+    # Apply a median filter to identify "typical" counts for this area
+    filtered = ndimage.median_filter(data, (1, 1, kernel_size, kernel_size))
+    # Flag any pixels as hot-pixel candidates if they exceed a given threshold
+    candidates = data >= outlier_factor * np.maximum(filtered, min_count)
+    # Flag as a hot pixel if a pixel is a candidate in at least num_outliers detectors
+    mask = np.sum(candidates, axis=1) >= num_outliers
+    # Remove any hot pixels that have zero count in any detector
+    mask &= np.sum(data > 0, axis=1) >= num_nonzero
+    # Remove any hot pixels that occur in more than max_repeat_fraction of all frames
+    mask &= (np.mean(mask, axis=0) < max_repeat_fraction)[None]
+    return (mask, filtered) if return_filtered else mask
+
+
+def apply_mask(data, mask, replacement_values):
+    """
+    Replace all values in `data` by `replacement_values` where `mask` is `True`.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        data tensor with shape `(n, p, w, h)`, where `n` is the number of frames,
+        `p` is the number of detectors, `w` is the width, and `h` is the height
+    mask : np.ndarray
+        binary mask of hot pixels with shape `(n, w, h)`
+    replacement_values : np.ndarray
+        tensor of replacement values with the same shape as `data`, a list of the
+        same length as non-zero elements in `mask`, or a scalar
+    """
+    data = np.asarray(data)
+    replacement_values = np.asarray(replacement_values)
+    # Repeat the mask along the detector dimension so we can index
+    mask = np.repeat(mask[:, None], data.shape[1], 1)
+
+    cleaned = data.copy()
+    if cleaned.shape == replacement_values.shape:
+        cleaned[mask] = replacement_values[mask]
+    else:
+        cleaned[mask] = replacement_values
+    return cleaned
+
+
+def remove_hot_pixels(data, num_outliers, kernel_size=3, outlier_factor=3, min_count=1,
+                      max_repeat_fraction=0.1, num_nonzero=None):
+    """
+    Remove hot pixels due to correlated noise.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        data tensor with shape `(n, p, w, h)`, where `n` is the number of frames,
+        `p` is the number of detectors, `w` is the width, and `h` is the height
+    num_outliers : int
+        number of times a pixel needs to be labelled as an outlier in different
+        detectors to be considered correlated noise
+    kernel_size : int
+        size of the kernel used for median filtering
+    outlier_factor : float
+        factor multiplying the median-filtered image to define the threshold that
+        serves to flag a pixel as an outlier
+    min_count : float
+        minimum count used to determine the threshold if the median-filtered image
+        is smaller
+    max_repeat_fraction : float
+        maximum fraction of frames in which a pixel is allowed to be a hot pixel.
+        If a pixel is a hot pixel candidate in more than `max_repeat_fraction` of
+        all frames, it is not considered a hot pixel.
+    num_nonzeros : int
+        number of detectors in which a hot pixel candidate must be non-zero. Default
+        is all detectors.
 
     Returns
     -------
@@ -981,19 +1072,9 @@ def remove_correlated_noise(data, num_outliers, kernel_size=3, outlier_factor=3,
         cleaned data tensor with the same shape as `data` with hot pixels replaced
         by median-filtered pixels
     """
-    data = np.asarray(data)
-    assert data.ndim == 4, f"expected `data` to have 4 dimensions; got {data.ndim}"
-    assert 1 <= num_outliers <= data.shape[1], "number of ouliers must be positive " \
-        "and <= the number of detectors"
-
-    filtered = ndimage.median_filter(data, (1, 1, kernel_size, kernel_size))
-    masks = data > outlier_factor * np.maximum(filtered, min_count)
-    mask = np.sum(masks, axis=1) >= num_outliers
-    # Repeat the mask along the detector dimension so we can index
-    mask = np.repeat(mask[:, None], data.shape[1], 1)
-    cleaned = data.copy()
-    cleaned[mask] = filtered[mask]
-    return cleaned
+    mask, filtered = infer_hot_pixels(data, num_outliers, kernel_size, outlier_factor,
+                                      min_count, max_repeat_fraction, num_nonzero, True)
+    return apply_mask(data, mask, filtered)
 
 
 def infer_translations(data, padding=8, method='sequential'):
