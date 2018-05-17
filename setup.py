@@ -12,7 +12,7 @@ setup(
         'numpy>=1.3',
         'scipy>=0.7',
     ],
-    version="0.2.0",
+    version="0.2.1",
     author="Till Hoffmann",
     long_description=long_description,
     long_description_content_type="text/markdown",

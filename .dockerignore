@@ -1,2 +1,6 @@
 playground/**/*
 playground/
+data/**/*
+data/
+.git/**/*
+.git/
