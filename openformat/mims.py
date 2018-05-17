@@ -50,8 +50,9 @@ def load_mims(filename, byte_order=None, roll_data=True):
         try:
             analysis_type = ANALYSIS_TYPES[mims.def_analysis.analysis_type]
         except KeyError:  # pragma: no cover
-            raise ValueError(f"found unrecognised analysis type {analysis_type} (expected "
-                             "one of {list(ANALYSIS_TYPES)})")
+            raise ValueError(f"Found unrecognised analysis type {mims.def_analysis.analysis_type} "
+                             f"(expected one of {list(ANALYSIS_TYPES)}). Did you use the correct "
+                             "byte order?")
 
         if analysis_type == 'IMAGE':
             mims['mask_im'] = Mask_im.from_buffer(fp, byte_order)
