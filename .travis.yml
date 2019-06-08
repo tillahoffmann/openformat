@@ -1,10 +1,11 @@
 language: python
 python:
 - '3.6'
+- '3.7'
 cache: pip
 install:
 - pip install --upgrade pip setuptools wheel
-- pip install --only-binary=scipy -r requirements.txt
+- pip install --only-binary=scipy,numpy -r requirements.txt
 - pip install -e .
 script:
 - make tests
