@@ -22,14 +22,14 @@ ANALYSIS_TYPES = {
 }
 
 
-def load_mims(filename, byte_order=None, roll_data=True):
+def load_mims(filename, byte_order='<', roll_data=True):
     """
     Load a multi-isotope imaging mass spectrometry (MIMS) file.
 
     Parameters
     ----------
     filename : str
-        path to the MIMS file
+        path to the MIMS file with .im extension
     byte_order : str
         byte order of the encoded binary data
     roll_data : bool
@@ -1038,7 +1038,7 @@ def apply_mask(data, mask, replacement_values):
     return cleaned
 
 
-def remove_hot_pixels(data, num_outliers, kernel_size=3, outlier_factor=3, min_count=1,
+def remove_hot_pixels(data, num_outliers=3, kernel_size=3, outlier_factor=1.999, min_count=.5,
                       max_repeat_fraction=0.1, num_nonzero=None):
     """
     Remove hot pixels due to correlated noise.
@@ -1153,3 +1153,109 @@ def apply_translations(data, translations, padding=8):
         translated.append(np.roll(frame, translation, (1, 2)))
 
     return np.asarray(translated)
+
+
+
+
+def process_image_data(filename, alignment_detector, padding=8, load_mims_kwargs=None,
+                       remove_hot_pixels_kwargs=None, infer_translations_kwargs=None):
+    """
+    Process a raw .im file, remove hot pixels, and align the frames of each image. Returns a
+    dictionary of cleaned aligned data and relevent information.
+
+    Parameters
+    ----------
+    filename : str
+        path to the MIMS file with .im extension
+    alignment_detector : str
+        the element or element combination to use for frame alignment e.g. '12C 14N' or '32Se'
+    padding : int
+        number of border pixels to allow image shifts without data loss
+    load_mims_kwargs : dict, optional
+        Dict with keywords passed to the :func:`~mims.load_mims` call used to load the raw data
+    remove_hot_pixel_kwargs : dict, optional
+        Dict with keywords passed to the :func:`~mims.remove_hot_pixels` call used to remove hot
+        pixels from the dataset
+    infer_translations_kwargs : dict, optional
+        Dict with keywords passed to the :func:`~mims.infer_translations` call used to calculate
+        image alignment shifts
+
+    Returns
+    -------
+    image_data : dict
+        total_lookup :  dict. Detector names as keys, cleaned and aligned data as values
+        detector_names : ordered list of the detectors
+        cleaned : list of the data with hot pixels removed, ordered by the detector index
+        translations : array containing the x, y translations for alignment
+        aligned : list of aligned data, ordered by detector index
+        w : width of the images in pixels
+        h : height of the images in pixels
+        extent : size of the image in micrometers (0, x extent, 0, y extent)
+        pixel_extent : size of each pixel in micrometers
+        alignment_detector_index : index of detector used for image alignment
+        se_detector_index : index of secondary electron data
+    """
+    # function kwargs
+    load_mims_kwargs = load_mims_kwargs or {}
+    remove_hot_pixels_kwargs = remove_hot_pixels_kwargs or {}
+    infer_translations_kwargs = infer_translations_kwargs or {}
+
+
+    # processing the image data to return a dictionary containing the various results
+    mims = load_mims(filename, **load_mims_kwargs)
+
+    w, h = mims.data.shape[2:]
+    # Find the index of the secondary electron detector which has exactly zero "mass"
+    se_index = [mass.mass_amu for mass in mims.tab_mass].index(0)
+    mims.tab_mass[se_index]['mass']['string'] = 'SE'
+
+    detector_names = [mass.mass.string.strip() for mass in mims.tab_mass]
+    alignment_index = detector_names.index(alignment_detector)
+    pixel_extent = mims.header_image.raster / w * 1e-3
+    extent = (0, pixel_extent * w, 0, pixel_extent * w)
+
+    # Remove hot pixels after dropping the secondary electron detector
+    data_without_se = np.delete(mims.data, se_index, axis=1)
+    cleaned = remove_hot_pixels(data_without_se, **remove_hot_pixels_kwargs)
+
+    # Re-insert the secondary electron detector
+    cleaned = np.insert(cleaned, se_index, mims.data[:, se_index], axis=1)
+
+    # Infer translations (drift) from one of the detectors
+    translations = infer_translations(cleaned[:, alignment_index], padding=padding,
+                                      **infer_translations_kwargs)
+
+    # Apply the translations
+    aligned = apply_translations(cleaned, translations, padding=padding)
+
+    # Chop off the padding
+    aligned = aligned[:, :, padding:-padding, padding:-padding]
+
+    total_lookup = dict(zip(detector_names, aligned.sum(axis=0)))
+
+    image_data = {
+        # total_lookup : dictionary with the keys being the detectors names, the values containing cleaned and aligned data
+        "total_lookup": total_lookup,
+        # detector_names : ordered list of the detectors
+        "detector_names": detector_names,
+        # cleaned : list of the data with hot pixels removed, ordered by the detector index
+        "cleaned": cleaned,
+        #translations: array containing the x, y translations for alignment
+        "translations": translations,
+        # aligned: list of aligned data, ordered by detector index
+        "aligned": aligned,
+        # w: width of the image
+        "w": w,
+        # h: height of the image
+        "h": h,
+        # extent: size of the image in micrometers: (0, x extend, 0, y extent)
+        "extent":extent,
+        # pixel_extent: size of each pixel in micrometers
+        "pixel_extent": pixel_extent,
+        # alignment_detector_index: index of detector used for image alignment
+        "alignment_detector_index:": alignment_index,
+        # se_detector_index: index of secondary detector data
+        "se_detector_index:": se_index,
+    }
+
+    return image_data
