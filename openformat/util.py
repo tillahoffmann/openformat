@@ -120,3 +120,11 @@ class Structure(dict):
                     self[name] = self[name].partition(b'\x00')[0].decode()
                 except UnicodeDecodeError:  # pragma: no cover
                     LOGGER.debug(f"could not decode attribute {name} of {self.__class__}: {self[name]}")
+
+
+def skipdocs(obj):  # pragma: no cover
+    """
+    Skip this object in the automatically generated documentation.
+    """
+    obj._skipdocs = True
+    return obj
