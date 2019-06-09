@@ -11,10 +11,12 @@ def test_process_image_data():
     assert image_data['translations'] is not None
     assert 'SE' in image_data['detector_names']
 
+
 def test_load_mims():
     mims = load_mims(FILENAME)
     assert len(mims.tab_mass) == mims.mask_im.nb_mass
     assert mims.data.shape[1] == mims.mask_im.nb_mass
+
 
 def test_filter_align():
     padding = 8

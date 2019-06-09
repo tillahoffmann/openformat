@@ -11,7 +11,21 @@ specific reference.
 from ..util import Structure
 
 
+_ANALYSIS_TYPES = {
+    21: 'DEPTH',
+    22: 'LINESCAN',
+    26: 'ISOTOP',
+    27: 'IMAGE',
+    29: 'GRAIN MODE IMAGE',
+    30: 'GRAIN MODE ISOTOP',
+    39: 'BEAM_CTRL_NANO_IMA',
+    40: 'BEAM_CTRL_NANO_LINESCAN',
+    41: 'IMAGE_SAMPLE_STAGE',
+}
+
+
 class Def_analysis(Structure):
+    """It contains definition information."""
     __size__ = 124
     __fields__ = [
         ('release', 'int'),  # data release number

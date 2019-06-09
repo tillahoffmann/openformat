@@ -7,24 +7,15 @@ from scipy import ndimage
 
 from ..util import from_buffer
 from .structures import *
-
-
-_ANALYSIS_TYPES = {
-    21: 'DEPTH',
-    22: 'LINESCAN',
-    26: 'ISOTOP',
-    27: 'IMAGE',
-    29: 'GRAIN MODE IMAGE',
-    30: 'GRAIN MODE ISOTOP',
-    39: 'BEAM_CTRL_NANO_IMA',
-    40: 'BEAM_CTRL_NANO_LINESCAN',
-    41: 'IMAGE_SAMPLE_STAGE',
-}
+from .structures import _ANALYSIS_TYPES
 
 
 def load_mims(filename, byte_order='<', roll_data=True):
     """
     Load a multi-isotope imaging mass spectrometry (MIMS) file.
+
+    .. note::
+        This function returns a dictionary with keys listed in the **Returns** section.
 
     Parameters
     ----------
@@ -38,8 +29,42 @@ def load_mims(filename, byte_order='<', roll_data=True):
 
     Returns
     -------
-    mims :
-        multi-isotope imaging mass spectrometry (MIMS) data
+    def_analysis : Def_analysis
+        information about the analysis performed. See [fmt]_ for details.
+    def_analysis_bis : Def_analysis_bis
+        additional information about the analysis peformed. See [fmt]_ for details.
+    mask_im : Mask_im
+        image acquisition information. See [fmt]_ for details.
+    tab_mass : list[Tab_mass]
+        information about the detectors and masses. See [fmt]_ for details.
+    cal_cond : Cal_cond
+        information about the conditions for data acquisition. See [fmt]_ for details.
+    poly_list : Poly_list
+        header for element information. See [fmt]_ for details.
+    polyatomique : list[Polyatomique]
+        sequence of element information containers. See [fmt]_ for details.
+    mask_nano : Mask_nano
+        data acquisition information. See [fmt]_ for details.
+    tab_Bfield_nano : tab_Bfield_nano
+        information about the magnetic field. See [fmt]_ for details.
+    anal_param_nano : Anal_param_nano
+        parameters for the analysis. See [fmt]_ for details.
+    anal_param_nano_bis : Anal_param_nano_bis
+        additional parameters for the analysis. See [fmt]_ for details.
+    _anal_param : bytes
+        unparsed value
+    _setup_soft : bytes
+        unparsed value
+    header_image : Header_image
+        information regarding images. See [fmt]_ for details.
+    data : np.ndarray
+        data tensor with shape `(n, p, w, h)`, where `n` is the number of frames, `p` is the number
+        of detectors, `w` is the width, and `h` is the height
+
+    References
+    ----------
+    .. [fmt] Alain Morgand. "Format File N50 V7",
+       https://www.dropbox.com/sh/gyss2uvv5ggu2vl/AACkLTMRfKjZj3PEt3H_PxY_a/manual?preview=Format+File+N50+V7.doc
     """
     mims = Structure()
     stat = os.stat(filename)
