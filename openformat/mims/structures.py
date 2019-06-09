@@ -1,3 +1,9 @@
+"""
+This module contains structures to load MIMS data. See [1]_ for a full reference.
+
+.. [1] Alain Morgand. "Format File N50 V7".
+"""
+
 from ..util import Structure
 
 

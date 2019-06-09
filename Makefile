@@ -1,4 +1,4 @@
-.PHONY : tests code_tests docs
+.PHONY : tests code_tests docs docs/api
 
 tests : code_tests docs
 
@@ -9,5 +9,7 @@ requirements.txt : requirements.in setup.py
 	pip-compile -v $<
 
 docs :
-	sphinx-apidoc -o docs . setup.py
 	sphinx-build docs docs/build
+
+docs/api :
+	sphinx-apidoc -o docs . setup.py

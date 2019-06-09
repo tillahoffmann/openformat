@@ -2,11 +2,11 @@ import logging
 import struct
 import numpy as np
 
-from .util import Structure, from_buffer
+from ..util import Structure, from_buffer, skipdocs
 
-LOGGER = logging.getLogger(__name__)
 
-BLOCK_IDS = {
+_LOGGER = logging.getLogger(__name__)
+_BLOCK_IDS = {
         120: 'DSet2DC1DIBlock',
         121: 'HistoryRecordBlock',
         122: 'InstrHdrHistoryRecordBlock',
@@ -39,7 +39,10 @@ BLOCK_IDS = {
 
 def load_sp(filename, byte_order='<'):
     """
-    Load a Perkin Elmer spectrum.
+    Load a Perkin Elmer spectrum [1]_.
+
+    .. note::
+        This function returns a dictionary with keys listed in the **Returns** section.
 
     Parameters
     ----------
@@ -50,8 +53,44 @@ def load_sp(filename, byte_order='<'):
 
     Returns
     -------
-    sp :
-        Perkin Elmer spectrum data
+    description : bytes
+        description of the dataset
+    start : float
+        wavenumber at which the spectrum starts (inclusive). See `xlabel` for the units.
+    end : float
+        wavenumber at which the spectrum ends (inclusive). See `xlabel` for the units.
+    delta : float
+        wavenumber difference between consecutive data points. See `xlabel` for the units.
+    num_points : int
+        number of datapoints
+    xlabel : str
+        units of the abscissa
+    ylabel : str
+        units of the ordinate
+    values : np.array
+        values of the spectrum
+    wavenumbers : np.array
+        wavenumbers corresponding to `values`
+    DataSetHistoryRecordMember : bytes
+        unparsed value
+    DataSetChecksumMember : bytes
+        unparsed value
+    DataSetDataTypeMember : bytes
+        unparsed value
+    DataSetNameMember : bytes
+        unparsed value
+    DataSetYAxisUnitTypeMember : bytes
+        unparsed value
+    DataSetSamplingMethodMember : bytes
+        unparsed value
+    DataSetFileTypeMember : bytes
+        unparsed value
+    DataSetAliasMember : bytes
+        unparsed value
+    DataSetXAxisUnitTypeMember : bytes
+        unparsed value
+    DataSetOrdinateRangeMember : bytes
+        unparsed value
 
     References
     ----------
@@ -73,7 +112,7 @@ def load_sp(filename, byte_order='<'):
                 break
             # Get the block identifier and block size
             block_id, = struct.unpack('h', block_id)
-            block_id = BLOCK_IDS[block_id]
+            block_id = _BLOCK_IDS[block_id]
             block_size, = struct.unpack('i', fp.read(4))
 
             if block_id =='DSet2DC1DIBlock':
@@ -108,9 +147,9 @@ def load_sp(filename, byte_order='<'):
                 'DataSetAliasMember',
             ]:
                 data[block_id] = fp.read(block_size)
-                LOGGER.info(f'read block of type {block_id} without parsing')
+                _LOGGER.info(f'read block of type {block_id} without parsing')
             else:
                 raise ValueError((block_id, fp.read(block_size)))
 
-    data['wavelengths'] = data['start'] + data['delta'] * np.arange(data['num_points'])
+    data['wavenumbers'] = data['start'] + data['delta'] * np.arange(data['num_points'])
     return data

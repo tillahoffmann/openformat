@@ -7,17 +7,10 @@ Subpackages
 .. toctree::
 
    openformat.mims
+   openformat.sp
 
 Submodules
 ----------
-
-openformat.sp module
---------------------
-
-.. automodule:: openformat.sp
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 openformat.util module
 ----------------------

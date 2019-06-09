@@ -3,16 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to openformat's documentation!
-======================================
+openformat
+==========
 
 Scientific equipment often produces output in binary formats that make it difficult to analyse the data without proprietary software. Openformat allows researchers to load binary data and analyse it in python. The following formats are currently supported:
 
-* Perkin Elmer spectra
-* Multi-isotope imaging mass spectrometry (MIMS)
+* :doc:`Perkin Elmer spectra <openformat.sp>`
+* :doc:`Multi-isotope imaging mass spectrometry (MIMS) <openformat.mims>`
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   modules
+   openformat
