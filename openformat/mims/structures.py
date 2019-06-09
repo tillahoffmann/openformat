@@ -1,7 +1,11 @@
 """
-This module contains structures to load MIMS data. See [1]_ for a full reference.
+This module contains structures to load MIMS data. See [1]_ for general information and [2]_ for a
+specific reference.
 
-.. [1] Alain Morgand. "Format File N50 V7".
+.. [1] Utrecht University. "nanosims-wiki",
+       http://nanosims.geo.uu.nl/nanosims-wiki/
+.. [2] Alain Morgand. "Format File N50 V7",
+       https://www.dropbox.com/sh/gyss2uvv5ggu2vl/AACkLTMRfKjZj3PEt3H_PxY_a/manual?preview=Format+File+N50+V7.doc
 """
 
 from ..util import Structure
