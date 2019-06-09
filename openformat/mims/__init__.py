@@ -331,13 +331,11 @@ def process_image_data(filename, alignment_detector, padding=8, load_mims_kwargs
         sequence of horizontal and vertical translations to align different scans
     aligned : list
         sequence of aligned detector data
-    w : int
-        width of the images in pixels
-    h : int
-        height of the images in pixels
-    extent : tuple
-        extent of the image in micrometers `(0, x_extent, 0, y_extent)`
-    pixel_extent : float
+    image_shape : tuple
+        width and height of the image in pixels
+    image_size : tuple
+        width and height of the image in micrometers
+    pixel_size : float
         size of each pixel in micrometers
     alignment_detector_index : int
         index of detector used for aligning different scans
@@ -360,8 +358,7 @@ def process_image_data(filename, alignment_detector, padding=8, load_mims_kwargs
 
     detector_names = [mass.mass.string.strip() for mass in mims.tab_mass]
     alignment_index = detector_names.index(alignment_detector)
-    pixel_extent = mims.header_image.raster / w * 1e-3
-    extent = (0, pixel_extent * w, 0, pixel_extent * w)
+    pixel_size = mims.header_image.raster / w * 1e-3
 
     # Remove hot pixels after dropping the secondary electron detector
     data_without_se = np.delete(mims.data, se_index, axis=1)
@@ -383,27 +380,15 @@ def process_image_data(filename, alignment_detector, padding=8, load_mims_kwargs
     total_lookup = dict(zip(detector_names, aligned.sum(axis=0)))
 
     image_data = {
-        # total_lookup : dictionary with the keys being the detectors names, the values containing cleaned and aligned data
         "total_lookup": total_lookup,
-        # detector_names : ordered list of the detectors
         "detector_names": detector_names,
-        # cleaned : list of the data with hot pixels removed, ordered by the detector index
         "cleaned": cleaned,
-        #translations: array containing the x, y translations for alignment
         "translations": translations,
-        # aligned: list of aligned data, ordered by detector index
         "aligned": aligned,
-        # w: width of the image
-        "w": w,
-        # h: height of the image
-        "h": h,
-        # extent: size of the image in micrometers: (0, x extend, 0, y extent)
-        "extent":extent,
-        # pixel_extent: size of each pixel in micrometers
-        "pixel_extent": pixel_extent,
-        # alignment_detector_index: index of detector used for image alignment
+        "image_shape": (w, h),
+        "image_size": (w * pixel_size, h * pixel_size),
+        "pixel_size": pixel_size,
         "alignment_detector_index:": alignment_index,
-        # se_detector_index: index of secondary detector data
         "se_detector_index:": se_index,
     }
 
