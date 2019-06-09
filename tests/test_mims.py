@@ -7,14 +7,16 @@ FILENAME = 'tests/data/2018_04_25_Cd_AF33_1_ROI3.im'
 
 def test_process_image_data():
     image_data = process_image_data(FILENAME, '12C 14N')
-    assert image_data['w'] == 256
+    assert image_data['image_shape'] == (256, 256)
     assert image_data['translations'] is not None
     assert 'SE' in image_data['detector_names']
+
 
 def test_load_mims():
     mims = load_mims(FILENAME)
     assert len(mims.tab_mass) == mims.mask_im.nb_mass
     assert mims.data.shape[1] == mims.mask_im.nb_mass
+
 
 def test_filter_align():
     padding = 8

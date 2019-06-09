@@ -17,8 +17,8 @@ setup(
         'numpy>=1.3',
         'scipy>=0.7',
     ],
-    version="0.2.2",
-    author="Till Hoffmann",
+    version="0.3.0",
+    author="Till Hoffmann, Mary Burkitt-Gray",
     long_description=long_description,
     long_description_content_type="text/markdown",
 )
