@@ -56,21 +56,21 @@ def load_sp(filename, byte_order='<'):
     description : bytes
         description of the dataset
     start : float
-        wavenumber at which the spectrum starts (inclusive). See `xlabel` for the units.
+        value at which the spectrum starts (inclusive). See `xlabel` for the units.
     end : float
-        wavenumber at which the spectrum ends (inclusive). See `xlabel` for the units.
+        value at which the spectrum ends (inclusive). See `xlabel` for the units.
     delta : float
-        wavenumber difference between consecutive data points. See `xlabel` for the units.
+        difference between consecutive abscissa data points. See `xlabel` for the units.
     num_points : int
         number of datapoints
     xlabel : str
         units of the abscissa
     ylabel : str
         units of the ordinate
-    values : np.array
-        values of the spectrum
-    wavenumbers : np.array
-        wavenumbers corresponding to `values`
+    yvalues : np.array
+        values of the spectrum corresponding to `xvalues`
+    xvalues : np.array
+        xvalues corresponding to `yvalues`
     DataSetHistoryRecordMember : bytes
         unparsed value
     DataSetChecksumMember : bytes
@@ -133,7 +133,7 @@ def load_sp(filename, byte_order='<'):
             elif block_id == 'DataSetDataMember':
                 _, length = from_buffer('hi', fp, byte_order)
                 assert length == data['num_points'] * 8
-                data['values'] = np.frombuffer(fp.read(length), '<d')
+                data['yvalues'] = np.frombuffer(fp.read(length), '<d')
             elif block_id in [
                 'DataSetHistoryRecordMember',
                 'DataSetChecksumMember',
@@ -151,5 +151,5 @@ def load_sp(filename, byte_order='<'):
             else:
                 raise ValueError((block_id, fp.read(block_size)))
 
-    data['wavenumbers'] = data['start'] + data['delta'] * np.arange(data['num_points'])
+    data['xvalues'] = data['start'] + data['delta'] * np.arange(data['num_points'])
     return data
